@@ -177,3 +177,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# clone repos in the root location
+Genesis/
+rl_games/
