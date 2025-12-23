@@ -1014,7 +1014,9 @@ class BaseEnv:
         if pos is not None or lookat is not None:
             camera.set_pose(pos=pos, lookat=lookat)
         if fov is not None:
-            camera.set_params(fov=fov)
+            if hasattr(camera, 'set_params'):
+                camera.set_params(fov=fov)
+            # Genesis API 변경으로 set_params가 없을 수 있음
         return  
 
     def start_recording(self):
