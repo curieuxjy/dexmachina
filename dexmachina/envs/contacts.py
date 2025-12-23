@@ -176,9 +176,9 @@ def get_filtered_contacts(
     - contact_force_a_geom: (N, n_geom_a, n_geom_b, 3) -> aggregated contact force on geom_a (flip sign for geom_b)
     - contact_force_a_link: (N, n_link_a, n_link_b, 3) -> aggregated contact force on link_a (flip sign for link_b)
     """
-    contact_data = entity_a._solver.collider.contact_data # get all the data!
+    contact_data = entity_a._solver.collider._collider_state.contact_data # get all the data!
     # NOTE need to use this to mask out invalid contacts!
-    n_contacts = entity_a._solver.collider.n_contacts.to_torch(device=device) # size [N] 
+    n_contacts = entity_a._solver.collider._collider_state.n_contacts.to_torch(device=device) # size [N] 
     # this returns a dict of key, tensor pairs: (can also do it separately: contact_data.geom_0.to_torch())
     # geom_a : torch.Size([500, N])
     # geom_b : torch.Size([500, N])
