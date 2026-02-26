@@ -30,6 +30,14 @@ conda activate dexmachina
 
 ```
 pip install torch==2.5.1
+```
+
+**RTX 5090 (Blackwell) users:** The default PyTorch build does not support sm_120. Install with CUDA 12.8+ instead:
+```
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+```
+
+```
 git clone https://github.com/MandiZhao/Genesis.git
 cd Genesis
 pip install -e .

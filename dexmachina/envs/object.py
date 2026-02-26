@@ -169,8 +169,8 @@ class ArticulatedObject:
         self.link_names = [link.name for link in entity.links] # this is ordered 'bottom', 'top'!!
         self.coll_idxs_global = [link.idx for link in entity.links if len(link.geoms) > 0]
 
-        assert all([isinstance(joint.dof_idx_local, int) for joint in movable_joints]), "Only one dof per joint is supported"
-        self.dof_idxs = [joint.dof_idx_local for joint in movable_joints]
+        assert all([isinstance(joint.dofs_idx_local[0], int) for joint in movable_joints]), "Only one dof per joint is supported"
+        self.dof_idxs = [joint.dofs_idx_local[0] for joint in movable_joints]
         self.actuated = self.cfg.get("actuated", False)
         
         self.entity = entity

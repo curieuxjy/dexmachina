@@ -55,7 +55,7 @@ def get_base_rotation(name):
 def interpolate_hand_joints(hand, n_steps=200, skip_wrist=False):
     all_joints = hand.joints
     actuated_joints = [joint for joint in all_joints if joint.type in [gs.JOINT_TYPE.REVOLUTE, gs.JOINT_TYPE.PRISMATIC]] 
-    act_idxs = [joint.dof_idx_local for joint in actuated_joints]
+    act_idxs = [joint.dofs_idx_local[0] for joint in actuated_joints]
     limits = []
     for joint in actuated_joints:
         if joint.type in [gs.JOINT_TYPE.REVOLUTE]:
@@ -103,7 +103,7 @@ def interpolate_wrist_finger_separately(hand, n_steps=50, skip_wrist=False, wris
         actuated_joints = actuated_joints[:6]
     if wrist_rot_only:
         actuated_joints = actuated_joints[3:6]
-    act_idxs = [joint.dof_idx_local for joint in actuated_joints]
+    act_idxs = [joint.dofs_idx_local[0] for joint in actuated_joints]
     limits = []
     for joint in actuated_joints:
         if joint.type in [gs.JOINT_TYPE.REVOLUTE, gs.JOINT_TYPE.PRISMATIC]:

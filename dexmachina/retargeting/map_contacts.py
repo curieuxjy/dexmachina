@@ -90,7 +90,7 @@ def create_scene(args, object_name, urdfs, num_raw_contact_markers=50, num_group
         ),
         show_viewer=args.vis_scene,
         use_visualizer=(args.vis_scene or args.record_video),
-        show_FPS=False,
+        profiling_options=gs.options.ProfilingOptions(show_FPS=False),
         vis_options = gs.options.VisOptions( 
             plane_reflection = True,
             ambient_light    = (0.4, 0.4, 0.4),
@@ -287,7 +287,7 @@ def set_entities_to_step(hand_entities, retargeter_results, step):
     for side, hand in hand_entities.items():
         hand_qpos = retargeter_results[side]["hand_qpos"][step]
         hand_qpos = torch.tensor(hand_qpos).to(device)[None]
-        joint_idxs = [joint.dof_idx_local for joint in hand.joints if joint.type in [gs.JOINT_TYPE.REVOLUTE, gs.JOINT_TYPE.PRISMATIC]]
+        joint_idxs = [joint.dofs_idx_local[0] for joint in hand.joints if joint.type in [gs.JOINT_TYPE.REVOLUTE, gs.JOINT_TYPE.PRISMATIC]]
         hand.set_dofs_position(position=hand_qpos, dofs_idx_local=joint_idxs)
     return 
 

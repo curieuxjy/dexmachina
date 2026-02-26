@@ -27,7 +27,7 @@ def get_entity_info(entity):
     all_joints = entity.joints  
     actuated_joints = [joint for joint in all_joints if joint.type in [gs.JOINT_TYPE.REVOLUTE, gs.JOINT_TYPE.PRISMATIC]]
     actuated_dof_names = [joint.name for joint in actuated_joints]
-    actuated_dof_idxs = [joint.dof_idx_local for joint in actuated_joints]
+    actuated_dof_idxs = [joint.dofs_idx_local[0] for joint in actuated_joints]
    
     qposes = np.concatenate([joint.init_qpos for joint in actuated_joints]) # shape (ndof,) 
     hand_init_pos = torch.tensor(qposes, dtype=torch.float32)[None, :]
@@ -47,7 +47,7 @@ def create_scene(args, hand_urdfs, obj_name):
         ),
         show_viewer=args.vis,
         use_visualizer=(args.vis or args.record_video),
-        show_FPS=False,
+        profiling_options=gs.options.ProfilingOptions(show_FPS=False),
         vis_options = gs.options.VisOptions( 
             plane_reflection = True,
             ambient_light    = (0.4, 0.4, 0.4),

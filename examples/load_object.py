@@ -24,7 +24,7 @@ def main(args):
             gravity=(0, 0, -9.81) if not args.zero_gravity else (0, 0, 0), 
         ), 
         show_viewer=args.vis,
-        show_FPS=False,
+        profiling_options=gs.options.ProfilingOptions(show_FPS=False),
         use_visualizer=True, 
     )
 

@@ -53,7 +53,7 @@ def get_scene_cfg(
             constraint_solver=gs.constraint_solver.Newton,
             enable_collision=True,
             enable_joint_limit=enable_joint_limit,
-            max_collision_pairs=100, # default was 100
+            max_collision_pairs=500,
             batch_dofs_info=batch_dofs_info,
         ),
         viewer_options=gs.options.ViewerOptions( 
@@ -63,7 +63,7 @@ def get_scene_cfg(
         ),
         use_visualizer=use_visualizer,
         show_viewer=show_viewer,
-        show_FPS=show_fps, 
+        profiling_options=gs.options.ProfilingOptions(show_FPS=show_fps),
     )
     
     if raytrace:
@@ -209,9 +209,15 @@ class BaseEnv:
         if self.group_collisions:
             print('Setting the SAME collision grouping to both hands')
             self.scene_cfg['rigid_options'].enable_self_collision = True
-            self.scene_cfg['rigid_options'].self_collision_group_filter = True
-            collision_groups = robot_cfgs['left'].get('collision_groups', dict())
-            self.scene_cfg['rigid_options'].link_group_mapping = collision_groups
+            # NOTE: self_collision_group_filter and link_group_mapping are not available
+            # in Genesis 0.3.3. Collision filtering relies on contype/conaffinity bitmasks
+            # set per-geom in the URDF/MJCF files instead.
+            if hasattr(self.scene_cfg['rigid_options'], 'self_collision_group_filter'):
+                self.scene_cfg['rigid_options'].self_collision_group_filter = True
+                collision_groups = robot_cfgs['left'].get('collision_groups', dict())
+                self.scene_cfg['rigid_options'].link_group_mapping = collision_groups
+            else:
+                print('Warning: self_collision_group_filter not available in this Genesis version, skipping group collision setup')
         if render_figure:
             print("Disabling gravity for figure rendering")
             self.scene_cfg['sim_options'].gravity = (0, 0, 0)

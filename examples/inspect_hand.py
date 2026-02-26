@@ -23,7 +23,7 @@ def main(args):
         ),
         show_viewer=args.vis,
         use_visualizer=True,
-        show_FPS=False, 
+        profiling_options=gs.options.ProfilingOptions(show_FPS=False),
     )
     scene = gs.Scene(**scene_cfg)
     device = torch.device('cuda:0')

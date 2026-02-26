@@ -128,11 +128,11 @@ class BaseRobot:
         all_joints = self.entity.joints  
         self.actuated_joints = [joint for joint in all_joints if joint.type in [gs.JOINT_TYPE.REVOLUTE, gs.JOINT_TYPE.PRISMATIC]]
         self.actuated_dof_names = [joint.name for joint in self.actuated_joints]
-        self.actuated_dof_idxs = [joint.dof_idx_local for joint in self.actuated_joints]
+        self.actuated_dof_idxs = [joint.dofs_idx_local[0] for joint in self.actuated_joints]
         self.ndof = len(self.actuated_joints) # NOTE this is NOT necessarily action dim due to mimic joints
         self.wrist_only = robot_cfg.get("wrist_only", False)
-        self.wrist_dof_idxs = [joint.dof_idx_local for joint in self.actuated_joints if 'forearm' in joint.name]
-        self.finger_dof_idxs = [joint.dof_idx_local for joint in self.actuated_joints if 'forearm' not in joint.name]
+        self.wrist_dof_idxs = [joint.dofs_idx_local[0] for joint in self.actuated_joints if 'forearm' in joint.name]
+        self.finger_dof_idxs = [joint.dofs_idx_local[0] for joint in self.actuated_joints if 'forearm' not in joint.name]
         assert len(self.wrist_dof_idxs) == 6, f"Found {len(self.wrist_dof_idxs)} wrist dofs"
         # setup joint limits 
         dof_limits = []
@@ -377,7 +377,7 @@ class BaseRobot:
         joint_name_to_dof_idx = dict()
         for joint in actuated_joints: # assume the underlying model is fully actuated
             if joint.name not in mimic_joint_map:
-                dof_idx = joint.dof_idx_local
+                dof_idx = joint.dofs_idx_local[0]
                 action_from_idxs.append(action_dim)
                 joint_from_idxs.append(dof_idx) 
                 joint_name_to_action_idx[joint.name] = action_dim
@@ -413,11 +413,11 @@ class BaseRobot:
         num_joints = len(joint_idxs)
         batched_kp = torch.tensor(
             [kp]*num_joints, dtype=torch.float32, device=self.device
-            ) 
+            ).unsqueeze(0).expand(self.num_envs, -1)
         batched_kv = torch.tensor(
             [kv]*num_joints, dtype=torch.float32, device=self.device
-            ) 
-            
+            ).unsqueeze(0).expand(self.num_envs, -1)
+
         self.entity.set_dofs_kp(
             batched_kp,
             joint_idxs,
@@ -428,7 +428,7 @@ class BaseRobot:
         )
         fr = torch.tensor(
             [fr]*num_joints, dtype=torch.float32, device=self.device
-            )
+            ).unsqueeze(0).expand(self.num_envs, -1)
         self.entity.set_dofs_force_range(
             -1.0 * fr,
             fr,
@@ -439,17 +439,17 @@ class BaseRobot:
         """ set the tuned values """
         kp, kv = 300.0, 30.0 
         # kp, kv = 5000.0, 50.0
-        forearm_trans = [joint.dof_idx_local for joint in self.actuated_joints if 'forearm_t' in joint.name]
+        forearm_trans = [joint.dofs_idx_local[0] for joint in self.actuated_joints if 'forearm_t' in joint.name]
         self.set_kp_kv_joints(kp, kv, forearm_trans)
 
         kp, kv = 300.0, 30.0
         # kp, kv = 5000.0, 50.0 
-        forearm_rot = [joint.dof_idx_local for joint in self.actuated_joints if 'roll' in joint.name or 'pitch' in joint.name or 'yaw' in joint.name]
+        forearm_rot = [joint.dofs_idx_local[0] for joint in self.actuated_joints if 'roll' in joint.name or 'pitch' in joint.name or 'yaw' in joint.name]
         self.set_kp_kv_joints(kp, kv, forearm_rot)
 
         kp, kv = 20.0, 2.0
         # kp, kv = 100.0, 10.0
-        fingers = [joint.dof_idx_local for joint in self.actuated_joints if '_J1' in joint.name or '_J2' in joint.name or '_J3' in joint.name or '_J4' in joint.name]
+        fingers = [joint.dofs_idx_local[0] for joint in self.actuated_joints if '_J1' in joint.name or '_J2' in joint.name or '_J3' in joint.name or '_J4' in joint.name]
         self.set_kp_kv_joints(kp, kv, fingers)
         
     def post_scene_build_setup(self):
@@ -467,7 +467,7 @@ class BaseRobot:
                     matched = True
                     break
             if matched:
-                joint_idxs.append(joint.dof_idx_local)
+                joint_idxs.append(joint.dofs_idx_local[0])
         if len(joint_idxs) == 0:
             print(f"No joints found for {joint_exprs}")
             breakpoint()
@@ -723,7 +723,7 @@ class BaseRobot:
         for word in ['forearm_tx', 'forearm_ty', 'forearm_tz']:
             for joint in self.actuated_joints:
                 if word in joint.name:
-                    idxs.append(joint.dof_idx_local)
+                    idxs.append(joint.dofs_idx_local[0])
         return idxs
     
     def get_control_force(self):

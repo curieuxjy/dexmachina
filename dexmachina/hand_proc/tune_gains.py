@@ -38,7 +38,7 @@ def create_scene(args, hand_urdfs, obj_name):
         ),
         show_viewer=args.vis,
         use_visualizer=True,
-        show_FPS=False,
+        profiling_options=gs.options.ProfilingOptions(show_FPS=False),
         vis_options = gs.options.VisOptions( 
             # visualize_contact=True,
             plane_reflection = True,
@@ -159,7 +159,7 @@ def find_joints_in_group(entity, exprs):
     for joint in all_joints:
         if joint.type not in [gs.JOINT_TYPE.REVOLUTE, gs.JOINT_TYPE.PRISMATIC]:
             continue
-        all_act_idxs.append(joint.dof_idx_local)
+        all_act_idxs.append(joint.dofs_idx_local[0])
         matched = False
         jname = joint.name
         for expr in exprs: # e.g. expr is '*J*, jname is 'MFJ1'
@@ -168,7 +168,7 @@ def find_joints_in_group(entity, exprs):
                 break
         if matched:
             names.append(jname)
-            idx = joint.dof_idx_local
+            idx = joint.dofs_idx_local[0]
             assert isinstance(idx, int), f"Expected int, got {type(idx)}"
             idxs.append(idx) 
     if len(idxs) == 0:
