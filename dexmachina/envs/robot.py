@@ -411,29 +411,18 @@ class BaseRobot:
         if joint_idxs is None:
             joint_idxs = self.actuated_dof_idxs
         num_joints = len(joint_idxs)
-        batched_kp = torch.tensor(
-            [kp]*num_joints, dtype=torch.float32, device=self.device
-            ).unsqueeze(0).expand(self.num_envs, -1)
-        batched_kv = torch.tensor(
-            [kv]*num_joints, dtype=torch.float32, device=self.device
-            ).unsqueeze(0).expand(self.num_envs, -1)
+        # Genesis 0.3.3: n_envs > 0 requires 2D [n_envs, n_dofs], n_envs == 0 requires 1D [n_dofs]
+        kp_t = torch.full((num_joints,), kp, dtype=torch.float32, device=self.device)
+        kv_t = torch.full((num_joints,), kv, dtype=torch.float32, device=self.device)
+        fr_t = torch.full((num_joints,), fr, dtype=torch.float32, device=self.device)
+        if self.num_envs > 0:
+            kp_t = kp_t.unsqueeze(0).expand(self.num_envs, -1).contiguous()
+            kv_t = kv_t.unsqueeze(0).expand(self.num_envs, -1).contiguous()
+            fr_t = fr_t.unsqueeze(0).expand(self.num_envs, -1).contiguous()
 
-        self.entity.set_dofs_kp(
-            batched_kp,
-            joint_idxs,
-        )
-        self.entity.set_dofs_kv(
-            batched_kv,
-            joint_idxs,
-        )
-        fr = torch.tensor(
-            [fr]*num_joints, dtype=torch.float32, device=self.device
-            ).unsqueeze(0).expand(self.num_envs, -1)
-        self.entity.set_dofs_force_range(
-            -1.0 * fr,
-            fr,
-            joint_idxs,
-        )
+        self.entity.set_dofs_kp(kp_t, joint_idxs)
+        self.entity.set_dofs_kv(kv_t, joint_idxs)
+        self.entity.set_dofs_force_range(-fr_t, fr_t, joint_idxs)
 
     def set_inspire_gains(self):
         """ set the tuned values """

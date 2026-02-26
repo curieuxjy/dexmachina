@@ -65,8 +65,11 @@ dexmachina/
 └── examples/                   # 예제 스크립트
     ├── inspect_hand.py         # 로봇 손 시각화
     ├── load_object.py          # 물체 로딩/시연 재생
+    ├── preview_training.py     # 학습 환경 GUI 미리보기
+    ├── preview_allegro.sh      # Allegro 데모 시각화 (16 envs)
     ├── train_rl.sh             # 학습 예제 (inspire_hand, 대규모)
-    └── train_dex3.sh           # 학습 예제 (dex3_hand, 소규모)
+    ├── train_dex3.sh           # 학습 예제 (dex3_hand, 소규모)
+    └── train_allegro_waffleiron.sh  # 학습 예제 (allegro_hand + waffleiron, 대규모)
 ```
 
 ---
@@ -161,6 +164,26 @@ python examples/load_object.py --obj_name box --load_demo --actuate_object -v
 python examples/load_object.py --obj_name mixer --load_demo -v
 ```
 
+### Step 2.5: 학습 환경 미리보기 (GUI)
+
+학습 전에 실제 환경이 어떻게 구성되는지 시각적으로 확인.
+
+```bash
+# 기본 (inspire_hand + box, kinematic 모드 = 데모 그대로 재생)
+python examples/preview_training.py
+
+# allegro hand + waffleiron (16 환경 동시)
+bash examples/preview_allegro.sh
+
+# 또는 직접 실행
+python examples/preview_training.py -B 4 --hand allegro_hand --clip waffleiron-30-230 \
+    --retarget_name para -am kinematic --actuate_object --kp_init 300 --kv_init 30
+
+# hybrid 모드 + 랜덤 액션 (학습 시 에이전트의 행동 시뮬레이션)
+python examples/preview_training.py -B 4 --hand allegro_hand --clip box-30-230 \
+    --retarget_name para -am hybrid --random_actions --actuate_object
+```
+
 ### Step 3: RL 학습 (소규모 테스트)
 
 ```bash
@@ -196,9 +219,17 @@ python dexmachina/rl/train_rl_games.py \
 ### Step 4: RL 학습 (대규모, 본격 학습)
 
 ```bash
-# inspire_hand + box, 환경 4096개 (GPU 메모리 충분시)
+# inspire_hand + box, 환경 4096개
 bash examples/train_rl.sh
+
+# allegro_hand + waffleiron, 환경 2048개
+bash examples/train_allegro_waffleiron.sh
 ```
+
+> **주의**: 물체 복잡도에 따라 최대 환경 수가 달라짐 (Jacobian int32 제한).
+> - box: 최대 ~4096
+> - waffleiron: 최대 ~3300 (권장 2048)
+> - GPU VRAM: RTX 5090 (32GB) 기준, waffleiron 2048 envs ≈ 22GB 사용
 
 ### Step 5: 학습 결과 평가
 
@@ -269,13 +300,20 @@ python examples/inspect_hand.py --hand allegro_hand -v
 # 2) 물체 + 시연 재생
 python examples/load_object.py --obj_name box --load_demo -v
 
-# 3) 소규모 학습 (dex3 + box)
+# 3) 학습 환경 미리보기 (GUI)
+python examples/preview_training.py                     # inspire_hand + box
+bash examples/preview_allegro.sh                        # allegro_hand + waffleiron
+
+# 4) 소규모 학습 (dex3 + box, 40 envs)
 bash examples/train_dex3.sh
 
-# 4) 학습 로그 확인
+# 5) 대규모 학습 (allegro + waffleiron, 2048 envs)
+bash examples/train_allegro_waffleiron.sh
+
+# 6) 학습 로그 확인
 ls logs/rl_games/
 
-# 5) 평가 (체크포인트 경로 교체)
+# 7) 평가 (체크포인트 경로 교체)
 python dexmachina/rl/eval_rl_games.py -B 1 --checkpoint <체크포인트.pth> -v
 ```
 
@@ -290,4 +328,6 @@ python dexmachina/rl/eval_rl_games.py -B 1 --checkpoint <체크포인트.pth> -v
 | `dofs_idx_local` 경고 | Genesis API 변경, 무시 가능 |
 | `frictionloss, damping` 경고 | URDF free joint 설정, 무시 가능 |
 | 메모리 부족 | `-B` 값 줄이기 (40 → 8) |
+| Jacobian int32 초과 | `-B` 값 줄이기 (복잡한 물체: 4096 → 2048) |
 | 리타겟팅 데이터 없음 | `dexmachina/retargeting/parallel_retarget.py`로 생성 |
+| `nan_envs=True` 무한 리셋 | `base_env.py`에 `self.nan_envs[:] = False` 초기화 적용 확인 |

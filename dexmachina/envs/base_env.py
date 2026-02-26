@@ -782,11 +782,12 @@ class BaseEnv:
         return _pos 
         
     def _compute_intermediate_values(self):
+        self.nan_envs[:] = False  # reset per step, check fresh
         for name, robot in self.robots.items():
             robot.update_value_buffers()
             self.nan_envs[:] = self.nan_envs | robot.get_nan_envs()
         for name, obj in self.objects.items():
-            obj.update_value_buffers() 
+            obj.update_value_buffers()
             self.nan_envs[:] = self.nan_envs | obj.get_nan_envs()
 
         if self.observe_contact_force or self.use_contact_reward:
