@@ -163,6 +163,42 @@ ValueError: Jacobian shape (12638, 51, 4096) is too large for int32.
 
 ---
 
+## 10. PyTorch 2.6: `torch.load` weights_only 기본값 변경
+
+**문제**: PyTorch 2.6에서 `torch.load`의 기본값이 `weights_only=False` → `weights_only=True`로 변경됨. rl_games가 저장한 체크포인트에 numpy 객체(`numpy._core.multiarray.scalar`)가 포함되어 있어 로딩 실패.
+```
+WeightsUnpickler error: Unsupported global: GLOBAL numpy._core.multiarray.scalar
+was not an allowed global by default.
+```
+
+**배경**: `weights_only=True`는 임의 코드 실행을 방지하는 보안 기능. 그러나 rl_games 체크포인트는 numpy 타입을 포함하므로 이 검사에 걸림. 직접 학습한 신뢰할 수 있는 체크포인트이므로 `weights_only=False`로 설정해도 안전.
+
+**해결**: rl_games의 `torch_ext.py`에서 `torch.load`에 `weights_only=False` 전달.
+```python
+# rl_games/algos_torch/torch_ext.py (line 74-75)
+def safe_load(filename):
+    return safe_filesystem_op(torch.load, filename, weights_only=False)
+```
+
+**수정 파일**: `rl_games/algos_torch/torch_ext.py` (외부 라이브러리, 로컬 수정)
+
+---
+
+## 11. 리타게팅 시 `batch_dofs_info` 설정
+
+**문제**: `parallel_retarget.py`에서 `batch_dofs_info=False`로 설정되어 있었으나, `robot.py`의 `set_joint_gains()`가 `num_envs > 0`일 때 2D 텐서를 전달하여 Genesis에서 에러 발생.
+```
+GenesisException: Expecting 1D output tensor.
+```
+
+**배경**: Genesis 0.3.3에서 `batch_dofs_info=False`이면 `set_dofs_kp/kv/force_range`는 항상 1D 텐서만 허용. 학습 코드(`constructors.py`)에서는 `batch_dofs_info=True`로 설정하여 문제가 없었으나, 리타게팅 코드에서는 `False`로 되어 있어 불일치 발생.
+
+**해결**: `parallel_retarget.py`에서 `batch_dofs_info=True`로 변경.
+
+**수정 파일**: `dexmachina/retargeting/parallel_retarget.py`
+
+---
+
 ## 미수정 경고 (무시 가능)
 
 | 경고 | 원인 | 비고 |
@@ -225,4 +261,5 @@ examples/train_dex3.sh                       (+2, -1)
 examples/preview_training.py                 (신규, 115줄)
 examples/train_allegro_waffleiron.sh         (신규, 19줄)
 examples/preview_allegro.sh                  (신규, 19줄)
+rl_games/algos_torch/torch_ext.py            (+1, -1) [외부 라이브러리]
 ```

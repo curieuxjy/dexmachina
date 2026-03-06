@@ -58,7 +58,7 @@ def create_scene(
             enable_collision=True,
             enable_joint_limit=True,
             max_collision_pairs=500,
-            batch_dofs_info=False, 
+            batch_dofs_info=True,
         ), 
         use_visualizer=(vis or record_video or render_image),
         show_viewer=vis,
