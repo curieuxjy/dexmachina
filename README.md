@@ -49,7 +49,7 @@ pip install -e .
 ```
 Additional packages needed for RL training:
 ```
-pip install gymnasium ray seaborn wandb trimesh
+pip install gymnasium ray seaborn wandb trimesh open3d
 # an old version of moviepy
 pip install moviepy==1.0.3
 ```
